@@ -8,7 +8,7 @@ ey_cloud_report "mongodb" do
 end
 
 mongo_nodes = @node[:utility_instances].select { |instance| instance[:name].match(/^mongodb_repl#{@node[:mongo_replset]}/) }
-if @node[:name] == mongo_nodes.last[:name]
+if !mongo_nodes && @node[:name] == mongo_nodes.last[:name]
 
   node[:applications].each do |app_name, data|
     user = node[:users].first
