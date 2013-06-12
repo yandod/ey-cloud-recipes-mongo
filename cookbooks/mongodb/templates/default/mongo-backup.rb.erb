@@ -20,7 +20,7 @@ AWS::S3::Base.establish_connection!(
   :secret_access_key => '<%= @secret_key %>'
 )
 
-@databases = `mongo --quiet --eval "for each(var db in db.runCommand('listDatabases').databases) if(db.sizeOnDisk > 1) print(db.name);" admin`.split("\n")
+@databases = `mongo --quiet --eval "db.runCommand('listDatabases').databases.forEach(function(db){ if(db.sizeOnDisk > 1) {print(db.name)}});" admin`.split("\n")
 @ismaster = `mongo --quiet --eval 'printjson(db.runCommand("ismaster"))' | grep ismaster | awk '{print $3}'| sed s/,//`.strip
 @environment = '<%= @env %>'
 @app_name = '<%= @app_name %>'
@@ -33,7 +33,7 @@ begin
 rescue AWS::S3::BucketAlreadyExists
 end
 
-if @ismaster == "false" #only dump non-primary nodes
+if @ismaster == "true" #only dump primary node
   @databases.each do |database|
     token = "#{database}"
     mongocmd = "mongodump -h 127.0.0.1 -d #{database} -o /mnt/tmp/#{token}.#{@tmpname} && tar cjf \"/mnt/tmp/#{token}.#{@tmpname}.tar.bz\" \"/mnt/tmp/#{token}.#{@tmpname}\""

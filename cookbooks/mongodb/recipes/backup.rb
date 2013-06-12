@@ -8,11 +8,15 @@ ey_cloud_report "mongodb" do
 end
 
 mongo_nodes = @node[:utility_instances].select { |instance| instance[:name].match(/^mongodb_repl#{@node[:mongo_replset]}/) }
-if !mongo_nodes.empty? && @node[:name] == mongo_nodes.last[:name]
+if !mongo_nodes.empty? 
 
   node[:applications].each do |app_name, data|
     user = node[:users].first
     db_name = "#{app_name}_#{node[:environment][:framework_env]}"
+
+    execute "aws-s3" do
+      command "gem install aws-s3"
+    end
 
     template "/usr/local/bin/mongo-backup" do
       source "mongo-backup.rb.erb"
