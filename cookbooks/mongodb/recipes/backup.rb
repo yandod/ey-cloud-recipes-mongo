@@ -33,6 +33,22 @@ if !mongo_nodes.empty?
         :app_name => app_name
       })
     end
+    
+    template "/usr/local/bin/mongo-backup-ls.rb" do
+      source "mongo-backup-ls.rb.erb"
+      owner "root"
+      group "root"
+      mode 0700
+      variables({
+        :username => 'root',
+        :password => user[:password],
+        :database => db_name,
+        :secret_key => node[:aws_secret_key],
+        :id_key => node[:aws_secret_id],
+        :env => node[:environment][:name],
+        :app_name => app_name
+      })
+    end
 
     if node[:environment][:framework_env] == 'production'
       cron "#{app_name}-mongo-backup" do
