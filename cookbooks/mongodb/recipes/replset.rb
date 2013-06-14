@@ -7,8 +7,9 @@ if @node[:mongo_replset]
 
   # Chef::Log.info "Setting up Replica set: #{node[:mongo_replset]} \n mongo_nodes: #{mongo_nodes.inspect} \n executing on node #{@node[:name]}"
 
-  if (@node[:name].match(/_1$/) && (mongo_nodes.length == 3 || (mongo_nodes.length ==2 && mongo_arbiter.length > 3)))
+  if (@node[:name].match(/_1$/) && mongo_nodes.length >= 3)
     setup_js = "#{node[:mongo_base]}/setup_replset.js"
+    reconfig_js = "#{node[:mongo_base]}/reconfig_replset.js"
 
     template setup_js do
       source "setup_replset.js.erb"
@@ -22,6 +23,18 @@ if @node[:mongo_replset]
                })
     end
 
+    template reconfig_js do
+      source "reconfig_replset.js.erb"
+      owner user[:username]
+      group user[:username]
+      mode '0755'
+      variables({ :mongo_replset => @node[:mongo_replset],
+                  :mongo_nodes => mongo_nodes,
+                  :mongo_port => @node[:mongo_port],
+                  :mongo_arbiter => mongo_arbiter
+               })
+    end
+    
     #----- wait for set members to be up and initialize -----
      mongo_nodes.each do |mongo_node|
       execute "wait for mongo on #{mongo_node[:hostname]} to come up" do
@@ -33,6 +46,13 @@ if @node[:mongo_replset]
       command "#{@node[:mongo_path]}/bin/mongo local #{setup_js}"
       only_if "echo 'rs.status()' | #{@node[:mongo_path]}/bin/mongo local --quiet | grep -q 'run rs.initiate'"
       Chef::Log.info "Replica set node initialized" 
+    end
+    
+    # ----- update the set
+    execute "update replset #{@node[:mongo_replset]}" do
+      command "#{@node[:mongo_path]}/bin/mongo local #{reconfig_js}"
+      #only_if "echo 'rs.status()' | #{@node[:mongo_path]}/bin/mongo local --quiet | grep -q 'loading local.system.replset config'"
+      Chef::Log.info "Replica set node reconfigured" 
     end
 
   else
