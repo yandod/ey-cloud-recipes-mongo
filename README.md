@@ -1,61 +1,77 @@
-# EY Cloud Recipes
+ey-cloud-recipes/mongodb v2.2.0
+--------
 
-[![Build Status](https://secure.travis-ci.org/engineyard/ey-cloud-recipes.png)](http://travis-ci.org/engineyard/ey-cloud-recipes)
+A chef recipe for enabling mongodb v2.2.0 on Engine Yard AppCloud.  This recipe downloads the latest version binary from 10gen and sets up a 3 node MongoDB Replica Set.
 
-## Introduction
+It makes a few assumptions:
 
-The ey-cloud-recipes repository is a collection of [chef](http://wiki.opscode.com/display/chef/Home) cookbooks that setup and configure commonly used tools for ruby applications, as well as cookbooks that can be used to modify parts of the EY Cloud environment.
+  * You will be running MongoDB on a utility instance(s).
+  * You will be using Replica sets.
 
-**Note: These cookbooks are for reference, and do not indicate a supported status.**
+MMS support
+--------
+The recipe will also install Mongo Monitoring Service (MMS) on a solo or db_master. You will need to provide your api & secret keys. 
+See https://mms.10gen.com/help/ for more information.
 
-## Quick Start Guide
 
-1. Clone this repository
-2. Uncomment the recipes that you wish to use in `cookbooks/main/recipes/default.rb`
-3. Make any changes that are mentioned in the individual cookbook's `readme.md` file
-4. Install the [engineyard](https://github.com/engineyard/engineyard) gem, if you haven't already (`gem install engineyard`).
-5. Upload your recipes to EY Cloud using `ey recipes upload -e ENVIRONMENT`, where `ENVIRONMENT` is the name of your environment.
-6. Run your recipes on the environment using `ey recipes apply -e ENVIRONMENT`
+Using it
+--------
 
-## EY Cloud Documentation
+  * add the following to main/recipes/default.rb,
 
-A full guide to customizing your EY Cloud environment with chef can be found at the following URL:
+``include_recipe "mongodb"``
 
-- https://support.cloud.engineyard.com/entries/21009867-Customize-Your-Environment-with-Chef-Recipes
+  * Upload recipes to your environment
 
-The following pages may also be of some use:
+``ey recipes upload -e <environment>``
 
-- https://support.cloud.engineyard.com/entries/21009927-engine-yard-cli-user-guide#eyrecipesapply
-- https://support.cloud.engineyard.com/entries/21406977-custom-chef-recipes-examples-best-practices
+  * Add an utility instance with the following naming scheme(s)
+    * For an replica set,
+      * mongodb_repl#{setname}_1
+      * mongodb_repl#{setname}_2
+      * mongodb_repl#{setname}_3
+      * ...
 
-## Chef Documentation
+  * Drops /data/#{app.name}/shared/config/mongo.yml with all the
+    information needed to connect to MongoDB.
 
-Below is a list of chef documentation pages that you may find useful, especially if you are just getting started with chef:
+Caveats
+--------
 
-- http://docs.opscode.com/chef_solo.html
-- http://docs.opscode.com/chef/chef_overview.html
-- http://docs.opscode.com/chef/resources.html
-- http://docs.opscode.com/chef/essentials_cookbook_attribute_files.html
+Replica sets should normally be in a size of 3 or greater. This recipe does not and will not support 32-bit instances.
+Please ensure you use 64-bit instances when you create the Utility slices.
 
-There is also a great RailsCast on the use of chef-solo (however, it is only available to RailsCasts Pro subscribers):
+This recipe has been extended to support very basic backups. 
 
-- http://railscasts.com/episodes/339-chef-solo-basics
+Legend
+--------
 
-## FAQ
+  * The usage of #{app.name} is an indicator of the application name set on the [Applications][1] Section on the [Dashboard][2].
 
-### What version of chef is used on EY Cloud?
+TODO
+--------
+Things (currently) lacking from this recipe:
 
-We use [chef-solo](http://docs.opscode.com/chef_solo.html) on EY Cloud. If you are using the new Gentoo 2012 stack, then you will be using chef 10. If you are running on an older version of the stack, then it will be chef 0.6.
+  * Ability to set up a sharded installation
 
-### How can I view the recipes uploaded to an environment?
+Known Bugs
+--------
 
-You can view the recipes that have been uploaded to an environment in two ways:
+Previous versions of this recipe used the legacy-static binary. This is no longer needed. Please fetch latest changes as this recipe is being frequently maintained. 
 
-- You can download the recipes for an environment using `ey recipes download`, which will be downloaded into a directory called `cookbooks` in the current directory.
-- You can login to any of your instances and navigate to `/etc/chef-custom/recipes/cookbooks`, which is the location that your custom cookbooks are located.
+Warranty
+--------
 
-### An error occurred during my chef run, where can I find the logs?
+If you find bugs, please open a Zendesk ticket or submit a pull request.
 
-Next to each instance, on the [dashboard](https://cloud.engineyard.com/), there are two links entitled "Base" and "Custom", the "Custom" link will take you to the chef log for the last run of your custom chef recipes, for that instance.
+Credits
+--------
 
-The chef log for your custom recipes is also located on each instance at `/var/log/chef.custom.log`
+Thanks to [Edward Muller][4] and [Dan Peterson][5] for the original awesome
+recipe to begin with.  
+
+[1]: https://cloud.engineyard.com/apps
+[2]: https://cloud.engineyard.com
+[3]: https://github.com/engineyard/ey-cloud-recipes/blob/master/cookbooks/mongodb/attributes/recipe.rb#L13
+[4]: https://github.com/freeformz
+[5]: https://github.com/dpiddy
